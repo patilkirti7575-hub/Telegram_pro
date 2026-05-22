@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Chat - Royal Chat{% endblock %}
+
+{% block content %}
+<style>
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+}
+
+.logo-icon i {
+    font-size: 22px;
+    color: white;
+}
+
+.logo-text h5 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.user-greeting {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.header-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+.header-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.05);
+}
+
+.header-btn i {
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .sidebar-header {
+        padding: 15px;
+    }
+    
+    .logo-section {
+        flex: 1;
+    }
+    
+    .user-greeting {
+        display: none;
+    }
+}
+</style>
+<div class="chat-container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="btn-back" onclick="toggleSidebar()" style="display:none; background:rgba(255,255,255,0.1); border:none; color:white; padding:8px 12px; border-radius:8px; cursor:pointer;">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="logo-text">
+                    <h5>Royal Chat</h5>
+                    <span class="user-greeting">Hello, {{ user.username }}</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'settings' %}" class="header-btn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </a>
+                <a href="{% url 'logout' %}" class="header-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="sidebar-search">
+            <form action="{% url 'search_users' %}" method="GET">
+                <input type="text" name="q" class="search-input" placeholder="Search users...">
+            </form>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="section-title">AI Assistant</div>
+            
+            <div class="chat-item active" onclick="location.href='{% url 'ai_chat' %}'">
+                <div class="avatar" style="background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);">
+                    <i class="fas fa-robot" style="font-size: 22px;"></i>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">AI Assistant</div>
+                    <div class="chat-last-message">Ask me anything!</div>
+                </div>
+            </div>
+            
+            <div class="section-title">My Chats</div>
+            
+            {% for c in chats %}
+            <div class="chat-item" onclick="location.href='{% url 'chat_view' c.id %}'">
+                <div class="avatar">
+                    {% for p in c.participants.all %}
+                        {% if p != user %}{{ p.username|slice:":1"|upper }}{% endif %}
+                    {% endfor %}
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">
+                        {% for p in c.participants.all %}
+                            {% if p != user %}{{ p.username }}{% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="chat-last-message">
+                        {% with c.messages.last as last_msg %}
+                            {% if last_msg %}{{ last_msg.content|truncatechars:25 }}{% else %}No messages{% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="chat-item text-muted" style="padding:20px; justify-content:center; font-size:13px;">No chats</div>
+            {% endfor %}
+            
+            <div class="section-title">New Chat</div>
+            {% for u in users %}
+            <div class="chat-item" onclick="location.href='{% url 'start_chat' u.id %}'">
+                <div class="avatar">
+                    {{ u.username|slice:":1"|upper }}
+                    {% if u.is_online %}<span class="online-dot"></span>{% endif %}
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">{{ u.username }}</div>
+                    <div class="chat-last-message">{% if u.is_online %}<span style="color:var(--success)">Online</span>{% else %}Offline{% endif %}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Main Chat -->
+    <div class="main-chat" id="mainChat">
+        <div class="chat-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);">
+            <button class="btn-back" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="chat-header-info">
+                <div class="avatar" style="background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h4>AI Assistant</h4>
+                    <div class="user-status" style="color: rgba(255,255,255,0.8);">Online 24/7</div>
+                </div>
+            </div>
+            <a href="{% url 'chat_list' %}" class="btn-back" style="margin-left:auto;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+        
+        <div class="messages-container" id="messagesContainer" style="background: linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%);">
+            <div class="ai-intro">
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-message received">
+                    <div class="message-text">
+                        Hello! 👋 I'm your AI Assistant. I'm here to help you with:
+                        <br><br>
+                        📚 <strong>Study & Learning</strong> - Explain concepts, homework help
+                        <br>
+                        💻 <strong>Programming</strong> - Code in Python, Java, JS, and more
+                        <br>
+                        ✍️ <strong>Writing</strong> - Essays, emails, creative writing
+                        <br>
+                        💡 <strong>Ideas</strong> - Brainstorming, problem solving
+                        <br>
+                        🌍 <strong>General Knowledge</strong> - Facts, explanations
+                        <br><br>
+                        Just type your question below and I'll do my best to help!
+                    </div>
+                </div>
+            </div>
+            
+            <div id="chatMessages"></div>
+            
+            <div id="typingIndicator" class="ai-typing" style="display: none;">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        
+        <form id="aiForm" class="message-input-container">
+            {% csrf_token %}
+            <textarea id="aiInput" class="message-input" placeholder="Ask me anything..." rows="1"></textarea>
+            <button type="submit" class="send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+.ai-intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    margin-bottom: 20px;
+}
+
+.ai-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: white;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+}
+
+.ai-message {
+    max-width: 80%;
+    margin-bottom: 15px;
+}
+
+.ai-message.received {
+    background: white;
+    color: #1e293b;
+    padding: 18px 25px;
+    border-radius: 20px;
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.ai-message.sent {
+    margin-left: auto;
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    color: white;
+    padding: 18px 25px;
+    border-radius: 20px;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.message-text {
+    line-height: 1.7;
+    font-size: 15px;
+}
+
+.ai-typing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 15px 20px;
+    margin-left: 20px;
+}
+
+.ai-typing span {
+    width: 10px;
+    height: 10px;
+    background: #8b5cf6;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.ai-typing span:nth-child(1) { animation-delay: 0s; }
+.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1.2); opacity: 1; }
+}
+
+.quick-questions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+}
+
+.quick-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: #6366f1;
+}
+
+.quick-btn:hover {
+    background: #8b5cf6;
+    color: white;
+    border-color: #8b5cf6;
+}
+</style>
+
+<script>
+const messagesContainer = document.getElementById('chatMessages');
+const typingIndicator = document.getElementById('typingIndicator');
+
+document.getElementById('aiForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('aiInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    addUserMessage(message);
+    input.value = '';
+    
+    showTyping();
+    
+    fetch('{% url "ai_chat_message" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideTyping();
+        addAIMessage(data.response);
+    })
+    .catch(error => {
+        hideTyping();
+        addAIMessage("Sorry, I encountered an error. Please try again.");
+    });
+});
+
+function addUserMessage(text) {
+    const div = document.createElement('div');
+    div.className = 'ai-message sent';
+    div.innerHTML = `<div class="message-text">${text}</div>`;
+    messagesContainer.appendChild(div);
+    scrollToBottom();
+}
+
+function addAIMessage(text) {
+    const div = document.createElement('div');
+    div.className = 'ai-message received';
+    div.innerHTML = `<div class="message-text">${text.replace(/\n/g, '<br>')}</div>`;
+    messagesContainer.appendChild(div);
+    scrollToBottom();
+}
+
+function showTyping() {
+    typingIndicator.style.display = 'flex';
+    scrollToBottom();
+}
+
+function hideTyping() {
+    typingIndicator.style.display = 'none';
+}
+
+function scrollToBottom() {
+    const container = document.getElementById('messagesContainer');
+    container.scrollTop = container.scrollHeight;
+}
+
+function askQuestion(question) {
+    document.getElementById('aiInput').value = question;
+    document.getElementById('aiForm').dispatchEvent(new Event('submit'));
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('show');
+}
+</script>
+{% endblock %}

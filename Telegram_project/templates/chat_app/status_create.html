@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Status - Royal Chat{% endblock %}
+
+{% block content %}
+<style>
+.status-create-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+    min-height: 100vh;
+}
+
+.status-create-header {
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(0,0,0,0.2);
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.status-create-header h3 {
+    color: white;
+    font-size: 18px;
+    flex: 1;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.status-preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+.preview-card {
+    width: 100%;
+    max-width: 350px;
+    min-height: 500px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 30px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.preview-text {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.4;
+    max-width: 280px;
+}
+
+.preview-image, .preview-video {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.preview-placeholder {
+    color: rgba(255,255,255,0.7);
+    font-size: 80px;
+    margin-bottom: 20px;
+}
+
+.preview-placeholder-text {
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+}
+
+.status-type-selector {
+    padding: 20px;
+    background: rgba(0,0,0,0.3);
+}
+
+.type-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.type-tab {
+    flex: 1;
+    padding: 15px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.type-tab:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.type-tab.active {
+    background: rgba(255,255,255,0.2);
+    border-color: white;
+}
+
+.type-tab i {
+    display: block;
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.type-tab span {
+    font-size: 14px;
+}
+
+.status-form {
+    padding: 0 20px 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.text-input {
+    width: 100%;
+    padding: 15px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    min-height: 100px;
+    resize: none;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: white;
+    background: rgba(255,255,255,0.2);
+}
+
+.text-input::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.file-input-wrapper {
+    position: relative;
+}
+
+.file-input {
+    width: 100%;
+    padding: 15px;
+    background: rgba(255,255,255,0.15);
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+}
+
+.file-input:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.color-picker-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.selected {
+    border-color: white;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: white;
+    color: #075E54;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+textarea {
+    font-family: inherit;
+}
+</style>
+
+<div class="chat-container">
+    <div class="status-create-container">
+        <div class="status-create-header">
+            <a href="{% url 'status_list' %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h3>Create Status</h3>
+        </div>
+        
+        <div class="status-preview">
+            <div class="preview-card" id="previewCard" style="background: #128C7E;">
+                <div class="preview-placeholder" id="previewIcon">
+                    <i class="fas fa-image"></i>
+                </div>
+                <p class="preview-placeholder-text" id="previewText">Your status preview</p>
+                <img id="previewImage" class="preview-image" style="display: none;">
+            </div>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data" class="status-form">
+            {% csrf_token %}
+            
+            <div class="status-type-selector">
+                <div class="type-tabs">
+                    <button type="button" class="type-tab active" data-type="text" onclick="selectType('text')">
+                        <i class="fas fa-font"></i>
+                        <span>Text</span>
+                    </button>
+                    <button type="button" class="type-tab" data-type="image" onclick="selectType('image')">
+                        <i class="fas fa-image"></i>
+                        <span>Photo</span>
+                    </button>
+                    <button type="button" class="type-tab" data-type="video" onclick="selectType('video')">
+                        <i class="fas fa-video"></i>
+                        <span>Video</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-group" id="textGroup">
+                <label>Your message</label>
+                <textarea name="content" id="statusText" class="text-input" placeholder="Type your status message..." oninput="updatePreview()"></textarea>
+            </div>
+            
+            <div class="form-group" id="mediaGroup" style="display: none;">
+                <label>Select Media</label>
+                <div class="file-input-wrapper">
+                    <input type="file" name="media" id="mediaInput" class="file-input" accept="image/*,video/*" onchange="previewMedia(this)">
+                </div>
+            </div>
+            
+            <div class="form-group" id="colorGroup">
+                <label>Background Color</label>
+                <div class="color-picker-group">
+                    <div class="color-option selected" style="background: #128C7E;" data-color="#128C7E" onclick="selectColor(this)"></div>
+                    <div class="color-option" style="background: #075E54;" data-color="#075E54" onclick="selectColor(this)"></div>
+                    <div class="color-option" style="background: #25D366;" data-color="#25D366" onclick="selectColor(this)"></div>
+                    <div class="color-option" style="background: #34B7F1;" data-color="#34B7F1" onclick="selectColor(this)"></div>
+                    <div class="color-option" style="background: #9C27B0;" data-color="#9C27B0" onclick="selectColor(this)"></div>
+                    <div class="color-option" style="background: #E91E63;" data-color="#E91E63" onclick="selectColor(this)"></div>
+                    <div class="color-option" style="background: #FF5722;" data-color="#FF5722" onclick="selectColor(this)"></div>
+                    <div class="color-option" style="background: #1F1F1F;" data-color="#1F1F1F" onclick="selectColor(this)"></div>
+                </div>
+                <input type="hidden" name="background_color" id="selectedColor" value="#128C7E">
+            </div>
+            
+            <input type="hidden" name="content_type" id="contentType" value="text">
+            
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-paper-plane"></i> Share Status
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentType = 'text';
+
+function selectType(type) {
+    currentType = type;
+    document.querySelectorAll('.type-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector(`.type-tab[data-type="${type}"]`).classList.add('active');
+    
+    document.getElementById('contentType').value = type;
+    
+    if (type === 'text') {
+        document.getElementById('textGroup').style.display = 'block';
+        document.getElementById('mediaGroup').style.display = 'none';
+        document.getElementById('colorGroup').style.display = 'block';
+        document.getElementById('previewIcon').style.display = 'block';
+        document.getElementById('previewText').style.display = 'block';
+        document.getElementById('previewImage').style.display = 'none';
+    } else {
+        document.getElementById('textGroup').style.display = 'block';
+        document.getElementById('mediaGroup').style.display = 'block';
+        document.getElementById('colorGroup').style.display = 'none';
+        document.getElementById('previewIcon').style.display = 'none';
+        document.getElementById('previewText').style.display = 'none';
+    }
+}
+
+function selectColor(el) {
+    document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+    el.classList.add('selected');
+    const color = el.dataset.color;
+    document.getElementById('selectedColor').value = color;
+    document.getElementById('previewCard').style.background = color;
+}
+
+function updatePreview() {
+    const text = document.getElementById('statusText').value;
+    document.getElementById('previewText').textContent = text || 'Your status preview';
+}
+
+function previewMedia(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const previewImage = document.getElementById('previewImage');
+            if (file.type.startsWith('image/')) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+                document.getElementById('previewCard').style.background = '#333';
+            } else if (file.type.startsWith('video/')) {
+                previewImage.outerHTML = `<video id="previewImage" class="preview-video" src="${e.target.result}" controls></video>`;
+            }
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+</script>
+{% endblock %}

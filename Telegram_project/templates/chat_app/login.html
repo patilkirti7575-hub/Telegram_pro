@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Royal Chat{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2><i class="fas fa-comments"></i> Royal Chat</h2>
+        
+        {% if messages %}
+            {% for m in messages %}
+                <div class="alert alert-danger">{{ m }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="text" name="username" class="form-control" placeholder="Username" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" class="form-control" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Sign In</button>
+        </form>
+        
+        <p style="text-align: center; margin-top: 20px; color: #64748b;">Contact admin to create an account</p>
+    </div>
+</div>
+
+<style>
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group .form-control {
+    background: rgba(255,255,255,0.95);
+    border: 2px solid rgba(14, 165, 233, 0.3);
+    color: #1e293b;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+.input-group .form-control:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+    outline: none;
+    background: white;
+    color: #1e293b;
+}
+
+.input-group .form-control::placeholder {
+    color: #64748b;
+    font-weight: 400;
+}
+
+.btn.btn-primary {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.btn.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(14, 165, 233, 0.4);
+}
+
+.alert-danger {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+</style>
+{% endblock %}

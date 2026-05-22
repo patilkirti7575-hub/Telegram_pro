@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if title %}{{ title }} | {% endif %}Royal Chat Admin{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">Royal Chat Admin</a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+
+{% block title %}Status Viewers - Royal Chat{% endblock %}
+
+{% block content %}
+<style>
+.viewers-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #0b141a 0%, #1a2a32 100%);
+    min-height: 100vh;
+}
+
+.viewers-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #00a884 0%, #00796b 100%);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.viewers-header h3 {
+    color: white;
+    font-size: 18px;
+    flex: 1;
+    margin: 0;
+}
+
+.viewers-list {
+    padding: 20px;
+}
+
+.viewer-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #1a2a32 0%, #2a3f4a 100%);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.viewer-card:hover {
+    transform: translateX(5px);
+}
+
+.viewer-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00a884 0%, #00d4aa 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    overflow: hidden;
+}
+
+.viewer-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.viewer-info {
+    flex: 1;
+    margin-left: 15px;
+}
+
+.viewer-info h4 {
+    color: white;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.viewer-info p {
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    margin: 0;
+}
+
+.viewer-badge {
+    display: flex;
+    gap: 5px;
+}
+
+.reply-badge {
+    padding: 5px 10px;
+    background: rgba(0,169,132,0.2);
+    border-radius: 15px;
+    color: #00a884;
+    font-size: 12px;
+}
+
+.no-viewers {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.5);
+}
+
+.no-viewers i {
+    font-size: 60px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+.no-viewers h4 {
+    color: white;
+    margin-bottom: 10px;
+}
+</style>
+
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('show');
+}
+</script>
+
+<div class="chat-container">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="btn-back" onclick="toggleSidebar()" style="display:none; background:rgba(255,255,255,0.1); border:none; color:white; padding:8px 12px; border-radius:8px; cursor:pointer;">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="logo-text">
+                    <h5>Royal Chat</h5>
+                    <span class="user-greeting">Hello, {{ user.username }}</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'settings' %}" class="header-btn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </a>
+                <a href="{% url 'logout' %}" class="header-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="sidebar-search">
+            <form action="{% url 'search_users' %}" method="GET">
+                <input type="text" name="q" class="search-input" placeholder="Search users...">
+            </form>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="section-title">Quick Access</div>
+            
+            <div class="chat-item" onclick="location.href='{% url 'status_list' %}'">
+                <div class="avatar" style="background: linear-gradient(135deg, #00a884 0%, #00d4aa 100%);">
+                    <i class="fas fa-circle"></i>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">My Status</div>
+                    <div class="chat-last-message">View your status</div>
+                </div>
+            </div>
+            
+            <div class="chat-item" onclick="location.href='{% url 'ai_chat' %}'">
+                <div class="avatar ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">AI Assistant</div>
+                    <div class="chat-last-message">
+                        <span class="ai-badge"><i class="fas fa-bolt"></i> Powered by AI</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-title">My Chats</div>
+            {% for chat in chats %}
+            <div class="chat-item" onclick="location.href='{% url 'chat_view' chat.id %}'">
+                {% for p in chat.participants.all %}
+                    {% if p != user %}
+                        <div class="avatar">
+                            {% if p.avatar %}
+                                <img src="{{ p.avatar.url }}" alt="{{ p.username }}">
+                            {% else %}
+                                {{ p.username|slice:":1"|upper }}
+                            {% endif %}
+                            {% if p.is_online %}<span class="online-dot"></span>{% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <div class="chat-info">
+                    <div class="chat-name">
+                        {% for p in chat.participants.all %}
+                            {% if p != user %}{{ p.username }}{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="viewers-container">
+        <div class="viewers-header">
+            <a href="{% url 'status_list' %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h3><i class="fas fa-eye"></i> Status Viewers</h3>
+        </div>
+        
+        <div class="viewers-list">
+            {% if viewers_data %}
+                {% for item in viewers_data %}
+                <div class="viewer-card" onclick="location.href='{% url 'start_chat' item.user.id %}'">
+                    <div class="viewer-avatar">
+                        {% if item.user.avatar %}
+                            <img src="{{ item.user.avatar.url }}" alt="{{ item.user.username }}">
+                        {% else %}
+                            {{ item.user.username|slice:":1"|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="viewer-info">
+                        <h4>{{ item.user.username }}</h4>
+                        <p>Viewed {{ item.viewed_at|timesince }} ago</p>
+                    </div>
+                    <div class="viewer-badge">
+                        {% if item.replied %}
+                            <span class="reply-badge"><i class="fas fa-reply"></i> Replied</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-viewers">
+                    <i class="fas fa-eye-slash"></i>
+                    <h4>No viewers yet</h4>
+                    <p>Your status hasn't been viewed yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+}
+
+.logo-icon i {
+    font-size: 22px;
+    color: white;
+}
+
+.logo-text h5 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.user-greeting {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.header-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+.header-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.05);
+}
+
+.header-btn i {
+    font-size: 16px;
+}
+
+.chat-item {
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-left: 4px solid transparent;
+    margin: 4px 10px;
+    border-radius: 12px;
+}
+
+.chat-item:hover {
+    background: rgba(14, 165, 233, 0.15);
+}
+
+.avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, #06b6d4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ai-avatar {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.online-dot {
+    width: 14px;
+    height: 14px;
+    background: var(--success);
+    border-radius: 50%;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border: 3px solid var(--bg-sidebar);
+}
+
+.ai-badge {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: white;
+}
+
+.chat-info {
+    flex: 1;
+}
+
+.chat-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.chat-last-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .sidebar-header {
+        padding: 15px;
+    }
+    
+    .logo-section {
+        flex: 1;
+    }
+    
+    .user-greeting {
+        display: none;
+    }
+}
+</style>
+{% endblock %}

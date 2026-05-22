@@ -1,0 +1,763 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - Royal Chat{% endblock %}
+
+{% block content %}
+<style>
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+}
+
+.logo-icon i {
+    font-size: 22px;
+    color: white;
+}
+
+.logo-text h5 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.user-greeting {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.header-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+.header-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.05);
+}
+
+.header-btn i {
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    .sidebar-header {
+        padding: 15px;
+    }
+    
+    .logo-section {
+        flex: 1;
+    }
+    
+    .user-greeting {
+        display: none;
+    }
+}
+</style>
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('show');
+}
+</script>
+<div class="chat-container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="btn-back" onclick="toggleSidebar()" style="display:none; background:rgba(255,255,255,0.1); border:none; color:white; padding:8px 12px; border-radius:8px; cursor:pointer;">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="logo-text">
+                    <h5>Royal Chat</h5>
+                    <span class="user-greeting">Hello, {{ user.username }}</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'chat_list' %}" class="header-btn" title="Back to Chat">
+                    <i class="fas fa-comments"></i>
+                </a>
+                <a href="{% url 'logout' %}" class="header-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="sidebar-search">
+            <form action="{% url 'search_users' %}" method="GET">
+                <input type="text" name="q" class="search-input" placeholder="Search users...">
+            </form>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="section-title">AI Assistant</div>
+            
+            <div class="chat-item" onclick="location.href='{% url 'ai_chat' %}'">
+                <div class="avatar" style="background: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">AI Assistant</div>
+                    <div class="chat-last-message">Ask me anything!</div>
+                </div>
+            </div>
+            
+            <div class="section-title">My Chats</div>
+            
+            {% for c in chats %}
+            <div class="chat-item" onclick="location.href='{% url 'chat_view' c.id %}'">
+                <div class="avatar">
+                    {% for p in c.participants.all %}
+                        {% if p != user %}{{ p.username|slice:":1"|upper }}{% endif %}
+                    {% endfor %}
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">
+                        {% for p in c.participants.all %}
+                            {% if p != user %}{{ p.username }}{% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="chat-last-message">
+                        {% with c.messages.last as last_msg %}
+                            {% if last_msg %}{{ last_msg.content|truncatechars:25 }}{% else %}No messages{% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="chat-item text-muted" style="padding:20px; justify-content:center; font-size:13px;">No chats</div>
+            {% endfor %}
+            
+            <div class="section-title">New Chat</div>
+            {% for u in users %}
+            <div class="chat-item" onclick="location.href='{% url 'start_chat' u.id %}'">
+                <div class="avatar">
+                    {{ u.username|slice:":1"|upper }}
+                    {% if u.is_online %}<span class="online-dot"></span>{% endif %}
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">{{ u.username }}</div>
+                    <div class="chat-last-message">{% if u.is_online %}<span style="color:var(--success)">Online</span>{% else %}Offline{% endif %}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Settings Content -->
+    <div class="main-chat" style="background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);">
+        <div class="chat-header">
+            <a href="{% url 'chat_list' %}" class="btn-back" style="display:flex;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="chat-header-info">
+                <h4>Settings</h4>
+            </div>
+        </div>
+        
+        <div class="settings-container">
+            <!-- Profile Section -->
+            <div class="settings-card">
+                <h3><i class="fas fa-user"></i> Profile</h3>
+                
+                <div class="profile-section">
+                    <div class="avatar-large" id="avatarPreview">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="profile-info">
+                        <h4>{{ user.username }}</h4>
+                        <p>{{ user.email }}</p>
+                    </div>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data" id="profileForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label>Profile Picture</label>
+                        <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="previewAvatar(this)">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" name="username" class="form-control" value="{{ user.username }}" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Bio</label>
+                        <textarea name="bio" class="form-control" rows="3" placeholder="Tell us about yourself...">{{ user.bio }}</textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-save">Save Changes</button>
+                </form>
+            </div>
+            
+            <!-- Account Section -->
+            <div class="settings-card">
+                <h3><i class="fas fa-shield-alt"></i> Account</h3>
+                
+                <form method="POST" action="{% url 'change_password' %}">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" name="old_password" class="form-control" placeholder="Enter current password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" name="new_password1" class="form-control" placeholder="Enter new password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" name="new_password2" class="form-control" placeholder="Confirm new password">
+                    </div>
+                    
+                    <button type="submit" class="btn-save">Update Password</button>
+                </form>
+            </div>
+            
+            <!-- Appearance Section -->
+            <div class="settings-card">
+                <h3><i class="fas fa-palette"></i> Appearance</h3>
+                
+                <div class="form-group">
+                    <label>Theme</label>
+                    <div class="theme-options">
+                        <label class="theme-option">
+                            <input type="radio" name="theme" value="blue" checked>
+                            <span class="theme-preview" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);"></span>
+                            Blue
+                        </label>
+                        <label class="theme-option">
+                            <input type="radio" name="theme" value="purple">
+                            <span class="theme-preview" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);"></span>
+                            Purple
+                        </label>
+                        <label class="theme-option">
+                            <input type="radio" name="theme" value="green">
+                            <span class="theme-preview" style="background: linear-gradient(135deg, #10b981, #059669);"></span>
+                            Green
+                        </label>
+                        <label class="theme-option">
+                            <input type="radio" name="theme" value="dark">
+                            <span class="theme-preview" style="background: linear-gradient(135deg, #1e293b, #0f172a);"></span>
+                            Dark
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Language</label>
+                    <select name="language" class="form-control">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="ur">Urdu</option>
+                        <option value="ar">Arabic</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Notifications Section -->
+            <div class="settings-card">
+                <h3><i class="fas fa-bell"></i> Notifications</h3>
+                
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Push Notifications</strong>
+                            <p>Receive notifications on your device</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="push_notifications" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Message Sounds</strong>
+                            <p>Play sound when receiving messages</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="message_sounds" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Online Status</strong>
+                            <p>Show when you're online</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="show_online" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Read Receipts</strong>
+                            <p>Show when you've read messages</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="read_receipts" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Typing Indicator</strong>
+                            <p>Show when you're typing</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="typing_indicator" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Privacy Section -->
+            <div class="settings-card">
+                <h3><i class="fas fa-lock"></i> Privacy & Security</h3>
+                
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Last Seen</strong>
+                            <p>Show your last seen time</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="last_seen" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Profile Photo</strong>
+                            <p>Who can see your photo</p>
+                        </div>
+                        <select name="photo_privacy" class="form-control" style="width: auto;">
+                            <option value="everyone">Everyone</option>
+                            <option value="contacts">My Contacts</option>
+                            <option value="nobody">Nobody</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Danger Zone -->
+            <div class="settings-card danger-zone">
+                <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                
+                <div class="danger-actions">
+                    <div>
+                        <strong>Delete All Chats</strong>
+                        <p>Permanently delete all your chat history</p>
+                    </div>
+                    <button class="btn-danger" onclick="deleteAllChats()">Delete Chats</button>
+                </div>
+                
+                <div class="danger-actions">
+                    <div>
+                        <strong>Delete Account</strong>
+                        <p>Permanently delete your account and all data</p>
+                    </div>
+                    <button class="btn-danger" onclick="deleteAccount()">Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-container {
+    padding: 30px;
+    max-width: 700px;
+    margin: 0 auto;
+    overflow-y: auto;
+    height: calc(100vh - 70px);
+}
+
+.settings-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.settings-card h3 {
+    font-size: 18px;
+    color: #1e293b;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-card h3 i {
+    color: #0ea5e9;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+}
+
+.profile-info h4 {
+    font-size: 20px;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.profile-info p {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: all 0.3s;
+    background: white;
+    color: #1e293b;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(14, 165, 233, 0.4);
+}
+
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.theme-option {
+    cursor: pointer;
+    text-align: center;
+}
+
+.theme-option input {
+    display: none;
+}
+
+.theme-preview {
+    display: block;
+    width: 100%;
+    height: 50px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+    border: 3px solid transparent;
+}
+
+.theme-option input:checked + .theme-preview {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+}
+
+.toggle-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.toggle-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.toggle-item div strong {
+    display: block;
+    color: #1e293b;
+    font-size: 15px;
+    margin-bottom: 3px;
+}
+
+.toggle-item div p {
+    color: #64748b;
+    font-size: 13px;
+    margin: 0;
+}
+
+.toggle {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+.toggle input:checked + .slider {
+    background-color: #0ea5e9;
+}
+
+.toggle input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+.danger-zone {
+    border: 2px solid #fee2e2;
+}
+
+.danger-zone h3 {
+    color: #dc2626;
+    border-color: #fee2e2;
+}
+
+.danger-zone h3 i {
+    color: #dc2626;
+}
+
+.danger-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #fef2f2;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+.danger-actions:last-child {
+    margin-bottom: 0;
+}
+
+.danger-actions div strong {
+    display: block;
+    color: #1e293b;
+    margin-bottom: 3px;
+}
+
+.danger-actions div p {
+    color: #64748b;
+    font-size: 13px;
+    margin: 0;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+    transform: scale(1.05);
+}
+
+#avatarInput {
+    display: none;
+}
+
+label[for="avatarInput"] {
+    display: inline-block;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+label[for="avatarInput"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+}
+
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 20px;
+    }
+    
+    .theme-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .profile-section {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreview').innerHTML = 
+                `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function deleteAllChats() {
+    if (confirm('Are you sure you want to delete all chats? This cannot be undone.')) {
+        alert('All chats have been deleted.');
+    }
+}
+
+function deleteAccount() {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        if (confirm('This will permanently delete all your data. Are you absolutely sure?')) {
+            window.location.href = "{% url 'delete_account' %}";
+        }
+    }
+}
+
+// Theme change
+document.querySelectorAll('input[name="theme"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        let color;
+        switch(this.value) {
+            case 'blue': color = '#0ea5e9'; break;
+            case 'purple': color = '#8b5cf6'; break;
+            case 'green': color = '#10b981'; break;
+            case 'dark': color = '#1e293b'; break;
+        }
+        document.documentElement.style.setProperty('--primary', color);
+    });
+});
+</script>
+{% endblock %}

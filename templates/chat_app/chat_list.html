@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chats - Telegram AI{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    
+    <!-- USERS SECTION -->
+    <div class="section-title">
+        <i class="fas fa-user-friends me-1"></i> Users
+    </div>
+
+    {% for user in users %}
+    <div class="chat-item" onclick="location.href='{% url 'start_chat' user.id %}'">
+        
+        <!-- Avatar -->
+        <div class="avatar" style="position: relative;">
+            {{ user.username|default:"U"|make_list|first|upper }}
+
+            <!-- Safe online dot -->
+            {% if user.is_online %}
+            <span class="online-dot"></span>
+            {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div class="chat-info">
+            <div class="chat-name">{{ user.username }}</div>
+
+            <div class="chat-last-message">
+                {% if user.is_online %}
+                    <span style="color: #4caf50;">Online</span>
+                {% else %}
+                    Offline
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+    {% empty %}
+        <p>No users found</p>
+    {% endfor %}
+
+</div>
+{% endblock %}

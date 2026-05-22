@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chats - Telegram AI{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <h5 class="mb-0"><i class="fas fa-paper-plane me-2"></i>Telegram AI</h5>
+            </div>
+            <div>
+                <a href="{% url 'profile' %}" class="nav-link-custom me-2" title="Profile">
+                    <i class="fas fa-user"></i>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-link-custom" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="sidebar-search">
+            <form action="{% url 'search_users' %}" method="GET">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search users...">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="section-title">
+                <i class="fas fa-robot me-1"></i> AI Assistant
+            </div>
+            <div class="chat-item" onclick="location.href='{% url 'start_ai_chat' %}'">
+                <div class="avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
+                    🤖
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">AI Assistant <span class="ai-badge">BOT</span></div>
+                    <div class="chat-last-message">Chat with AI</div>
+                </div>
+            </div>
+            
+            <div class="section-title">
+                <i class="fas fa-user-friends me-1"></i> Users
+                <a href="{% url 'create_group' %}" class="btn btn-sm btn-link float-end"><i class="fas fa-plus"></i></a>
+            </div>
+            {% for user in users %}
+            <div class="chat-item" onclick="location.href='{% url 'start_chat' user.id %}'">
+                <div class="avatar" style="position: relative;">
+                    {{ user.username|slice:":1"|upper }}
+                    {% if user.is_online %}
+                    <span class="online-dot"></span>
+                    {% endif %}
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">{{ user.username }}</div>
+                    <div class="chat-last-message">
+                        {% if user.is_online %}
+                        <span style="color: #4caf50;">Online</span>
+                        {% else %}
+                        Offline
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="chat-item text-muted">No other users</div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="main-chat" id="mainChat">
+        <div class="empty-chat">
+            <i class="fas fa-comments"></i>
+            <h4>Select a chat to start messaging</h4>
+            <p>Choose a user from the sidebar or chat with AI</p>
+            <button class="btn btn-primary mt-3" onclick="location.href='{% url 'start_ai_chat' %}'">
+                <i class="fas fa-robot me-2"></i>Chat with AI
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

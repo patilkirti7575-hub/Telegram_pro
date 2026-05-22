@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}Status - Royal Chat{% endblock %}
+
+{% block content %}
+<style>
+.status-viewer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 9999;
+}
+
+.viewer-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    z-index: 10;
+}
+
+.viewer-back {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.viewer-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.viewer-user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00a884 0%, #00d4aa 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    overflow: hidden;
+}
+
+.viewer-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.viewer-user-info h4 {
+    color: white;
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.viewer-user-info p {
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    margin: 0;
+}
+
+.viewer-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.viewer-status {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.viewer-text {
+    font-size: 24px;
+    color: white;
+    text-align: center;
+    padding: 50px;
+    max-width: 500px;
+    line-height: 1.5;
+}
+
+.viewer-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+
+.reply-input {
+    flex: 1;
+    padding: 15px 20px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    font-size: 15px;
+}
+
+.reply-input::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.reply-input:focus {
+    outline: none;
+    background: rgba(255,255,255,0.2);
+}
+
+.send-reply-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #00a884;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.send-reply-btn:hover {
+    transform: scale(1.1);
+}
+
+.viewer-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.viewer-nav:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.viewer-nav.prev {
+    left: 20px;
+}
+
+.viewer-nav.next {
+    right: 20px;
+}
+
+.viewer-nav:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.3);
+    z-index: 20;
+}
+
+.progress-fill {
+    height: 100%;
+    background: white;
+    transition: width 0.1s linear;
+}
+
+.status-count {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    margin-left: 10px;
+}
+</style>
+
+<div class="status-viewer-container">
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    
+    <div class="viewer-header">
+        <a href="{% url 'status_list' %}" class="viewer-back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="viewer-user">
+            <div class="viewer-user-avatar">
+                {% if target_user.avatar %}
+                    <img src="{{ target_user.avatar.url }}" alt="{{ target_user.username }}">
+                {% else %}
+                    {{ target_user.username|slice:":1"|upper }}
+                {% endif %}
+            </div>
+            <div class="viewer-user-info">
+                <h4>{{ target_user.username }}</h4>
+                <p id="statusTime">{{ statuses.0.created_at|date:"g:i A" }} · <span id="statusCount">{{ statuses|length }} updates</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="viewer-content" id="viewerContent">
+        {% for status in statuses %}
+        <div class="status-item" data-index="{{ forloop.counter0 }}" style="display: {% if forloop.first %}block{% else %}none{% endif %}; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+            {% if status.content_type == 'text' %}
+                <div class="viewer-text" style="background: {{ status.background_color }};">
+                    {{ status.content }}
+                </div>
+            {% elif status.content_type == 'image' %}
+                <img src="{{ status.media.url }}" class="viewer-status" alt="Status">
+            {% elif status.content_type == 'video' %}
+                <video src="{{ status.media.url }}" class="viewer-status" controls></video>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <button class="viewer-nav prev" id="prevBtn" onclick="prevStatus()">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    <button class="viewer-nav next" id="nextBtn" onclick="nextStatus()">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+    
+    <div class="viewer-footer">
+        <input type="text" class="reply-input" id="replyInput" placeholder="Reply to {{ target_user.username }}...">
+        <button class="send-reply-btn" onclick="sendReply()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+let currentIndex = 0;
+const totalStatuses = {{ statuses|length }};
+let progressInterval;
+const statusDuration = 5000;
+
+function updateProgress() {
+    let progress = 0;
+    const progressFill = document.getElementById('progressFill');
+    
+    clearInterval(progressInterval);
+    progressInterval = setInterval(() => {
+        progress += 100 / (statusDuration / 100);
+        progressFill.style.width = progress + '%';
+        
+        if (progress >= 100) {
+            clearInterval(progressInterval);
+            nextStatus();
+        }
+    }, 100);
+}
+
+function showStatus(index) {
+    const items = document.querySelectorAll('.status-item');
+    items.forEach((item, i) => {
+        item.style.display = i === index ? 'flex' : 'none';
+    });
+    
+    document.getElementById('statusCount').textContent = `${index + 1} of ${totalStatuses}`;
+    currentIndex = index;
+    
+    document.getElementById('prevBtn').disabled = index === 0;
+    document.getElementById('nextBtn').disabled = index === totalStatuses - 1;
+    
+    updateProgress();
+}
+
+function prevStatus() {
+    if (currentIndex > 0) {
+        showStatus(currentIndex - 1);
+    }
+}
+
+function nextStatus() {
+    if (currentIndex < totalStatuses - 1) {
+        showStatus(currentIndex + 1);
+    } else {
+        window.location.href = "{% url 'status_list' %}";
+    }
+}
+
+function sendReply() {
+    const reply = document.getElementById('replyInput').value.trim();
+    if (!reply) return;
+    
+    const statusId = {{ statuses.0.id }};
+    
+    fetch(`/status/reply/${statusId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: `reply=${encodeURIComponent(reply)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('replyInput').value = '';
+            alert('Reply sent!');
+        }
+    });
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') prevStatus();
+    if (e.key === 'ArrowRight') nextStatus();
+    if (e.key === 'Escape') window.location.href = "{% url 'status_list' %}";
+});
+
+updateProgress();
+</script>
+{% endblock %}

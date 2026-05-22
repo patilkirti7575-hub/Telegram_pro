@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/nav_sidebar.css' %}">
+    <script src="{% static 'admin/js/nav_sidebar.js' %}" defer></script>
+    {% block extrastyle %}{% endblock %}
+    {% block blockbots %}{% endblock %}
+</head>
+<body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}" data-admin-utc-offset="{% now "Z" %}">
+    <div id="header"></div>
+    {% block nav-global %}{% endblock %}
+    {% block breadcrumbs %}{% endblock %}
+
+    <div class="main" id="main">
+        {% if not is_popup %}
+            {% block sidebar %}{% endblock %}
+        {% endif %}
+
+        <div class="content" id="content">
+            {% block messages %}
+                {% if messages %}
+                    <ul class="messagelist">
+                        {% for message in messages %}
+                            <li class="{{ message.tags }}">{{ message|capfirst }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endblock messages %}
+            {% block content %}
+                {{ content }}
+            {% endblock %}
+            {% block footer %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile - Telegram AI{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+
+                    <!-- Avatar -->
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px; margin: 0 auto 20px;">
+                        {{ profile_user.username|default:"U"|make_list|first|upper }}
+                    </div>
+
+                    <!-- Username -->
+                    <h3>{{ profile_user.username|default:"User" }}</h3>
+
+                    <!-- Status (static for now) -->
+                    <p class="text-muted">
+                        <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Offline
+                    </p>
+
+                    <!-- Basic Info -->
+                    <div class="row mt-4 text-start">
+                        <div class="col-md-6">
+                            <p><strong>First Name:</strong> {{ profile_user.first_name|default:"Not set" }}</p>
+                            <p><strong>Last Name:</strong> {{ profile_user.last_name|default:"Not set" }}</p>
+                            <p><strong>Email:</strong> {{ profile_user.email|default:"Not set" }}</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- Future fields (safe) -->
+                            <p><strong>Bio:</strong> Not added yet</p>
+                            <p><strong>City:</strong> Not added yet</p>
+                            <p><strong>Country:</strong> Not added yet</p>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Buttons -->
+                    <div class="d-flex justify-content-center gap-2">
+                        {% if is_own_profile %}
+                        <a href="{% url 'edit_profile' %}" class="btn btn-primary">
+                            Edit Profile
+                        </a>
+                        {% else %}
+                        <a href="{% url 'start_chat' profile_user.id %}" class="btn btn-primary">
+                            Send Message
+                        </a>
+                        {% endif %}
+
+                        <a href="{% url 'chat_list' %}" class="btn btn-outline-secondary">
+                            Back
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
